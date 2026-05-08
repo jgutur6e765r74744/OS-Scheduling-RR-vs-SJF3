@@ -5,7 +5,6 @@ import matplotlib.colors as mcolors
 from collections import deque
 from fpdf import FPDF
 
-# ================= PROCESS CLASS =================
 class Process:
     def __init__(self, pid, arrival, burst):
         self.pid = pid
@@ -15,7 +14,6 @@ class Process:
         self.start_time = -1
         self.completion = 0
 
-# ================= HELPER FUNCTIONS =================
 def build_processes(raw_data):
     return [Process(p["pid"], p["arrival"], p["burst"]) for p in raw_data]
 
@@ -38,7 +36,33 @@ def get_average(metrics):
         sum(x[3] for x in metrics) / n,
     )
 
-# ================= ROUND ROBIN ALGORITHM =================
+SCENARIOS = {
+    "Scenario 1": {
+        "quantum": 2,
+        "processes": [
+            {"pid": "P1", "arrival": 0, "burst": 7},
+            {"pid": "P2", "arrival": 1, "burst": 3},
+            {"pid": "P3", "arrival": 2, "burst": 8},
+            {"pid": "P4", "arrival": 5, "burst": 2},
+        ],
+    },
+    "Scenario 2": {
+        "quantum": 4,
+        "processes": [
+            {"pid": "P1", "arrival": 0, "burst": 20},
+            {"pid": "P2", "arrival": 1, "burst": 2},
+            {"pid": "P3", "arrival": 2, "burst": 2},
+        ],
+    },
+    "Scenario 3": {
+        "quantum": 0,
+        "processes": [
+            {"pid": "P1", "arrival": 0, "burst": -5},
+            {"pid": "", "arrival": 1, "burst": 3},
+        ],
+    },
+}
+
 def run_round_robin(processes, quantum):
     time = 0
     ready_queue = deque()
@@ -76,7 +100,6 @@ def run_round_robin(processes, quantum):
 
     return gantt_chart
 
-# ================= SJF (PREEMPTIVE) ALGORITHM =================
 def run_sjf(processes):
     time = 0
     gantt_chart = []
@@ -112,7 +135,6 @@ def merge_gantt(gantt):
             merged.append([pid, start, end])
     return merged
 
-# ================= CHARTS & VISUALIZATION =================
 def draw_gantt(gantt, title):
     fig, ax = plt.subplots(figsize=(9, 3))
     
@@ -167,7 +189,6 @@ def draw_comparison_chart(rr_avg, sjf_avg):
     plt.tight_layout()
     plt.show()
 
-# ================= PDF EXPORT =================
 def export_pdf(rr_avg, sjf_avg, raw_processes):
     pdf = FPDF()
     pdf.add_page()
@@ -207,18 +228,17 @@ def export_pdf(rr_avg, sjf_avg, raw_processes):
     
     pdf.output("Scheduling_Comparison_Report.pdf")
 
-# ================= GUI APP =================
+
 class SchedulerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("OS CPU Scheduling Project")
         self.root.geometry("950x850")
-        self.root.configure(bg="#ecf0f1") # لون فاتح ومريح للعين
+        self.root.configure(bg="#ecf0f1")
 
         self.processes_data = []
         self.rr_avg_res = None
         self.sjf_avg_res = None
-
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("Treeview", font=('Arial', 10), rowheight=25)
@@ -250,6 +270,20 @@ class SchedulerApp:
         tk.Button(btn_frame, text="Clear Data", command=self.clear_all,
                   bg="#e74c3c", fg="white", font=("Arial", 11, "bold"), width=12).grid(row=0, column=3, padx=8)
 
+        scenario_frame = tk.Frame(root, bg="#ecf0f1")
+        scenario_frame.pack(pady=10)
+
+        tk.Label(scenario_frame, text="Load Scenario:", fg="#2c3e50", bg="#ecf0f1",
+                 font=("Arial", 12, "bold")).grid(row=0, column=0, columnspan=3, pady=(0, 8))
+
+        tk.Button(scenario_frame, text="Scenario 1", command=lambda: self.load_scenario("Scenario 1"),
+                  bg="#2980b9", fg="white", font=("Arial", 10, "bold"), width=14).grid(row=1, column=0, padx=6)
+        tk.Button(scenario_frame, text="Scenario 2", command=lambda: self.load_scenario("Scenario 2"),
+                  bg="#16a085", fg="white", font=("Arial", 10, "bold"), width=14).grid(row=1, column=1, padx=6)
+        tk.Button(scenario_frame, text="Scenario 3", command=lambda: self.load_scenario("Scenario 3"),
+                  bg="#f39c12", fg="white", font=("Arial", 10, "bold"), width=14).grid(row=1, column=2, padx=6)
+
+        self.loaded_tree = self.create_process_table("Loaded Scenario Processes", ("PID", "Arrival", "Burst"))
         self.tree_rr = self.create_table("Round Robin Details")
         self.tree_sjf = self.create_table("SJF Details")
         self.tree_comp = self.create_table("Final Average Comparison", comparison=True)
@@ -276,6 +310,18 @@ class SchedulerApp:
         table.pack()
         return table
 
+    def create_process_table(self, title, cols):
+        tk.Label(self.root, text=title, fg="#34495e", bg="#ecf0f1",
+                 font=("Arial", 12, "bold")).pack(pady=(10, 5))
+
+        table = ttk.Treeview(self.root, columns=cols, show="headings", height=4)
+        for c in cols:
+            table.heading(c, text=c)
+            table.column(c, width=120, anchor="center")
+
+        table.pack()
+        return table
+
     def add_process(self):
         try:
             pid = self.entry_pid.get().strip()
@@ -290,16 +336,38 @@ class SchedulerApp:
                 return messagebox.showerror("Duplicate", "Process ID already exists.")
 
             self.processes_data.append({"pid": pid, "arrival": arr, "burst": brs})
-            
+            self.update_process_table()
             self.entry_pid.delete(0, tk.END)
             self.entry_arr.delete(0, tk.END)
             self.entry_brs.delete(0, tk.END)
         except ValueError:
             messagebox.showerror("Format Error", "Please enter valid integers for Arrival and Burst.")
 
+    def load_scenario(self, scenario_name):
+        scenario = SCENARIOS.get(scenario_name)
+        if not scenario:
+            return messagebox.showerror("Error", "Unknown scenario selected.")
+
+        self.clear_all()
+        self.processes_data = [p.copy() for p in scenario["processes"]]
+        self.entry_qnt.delete(0, tk.END)
+        self.entry_qnt.insert(0, str(scenario["quantum"]))
+        self.update_process_table()
+
+        if self.processes_data:
+            first = self.processes_data[0]
+            self.entry_pid.delete(0, tk.END)
+            self.entry_arr.delete(0, tk.END)
+            self.entry_brs.delete(0, tk.END)
+            self.entry_pid.insert(0, first["pid"])
+            self.entry_arr.insert(0, str(first["arrival"]))
+            self.entry_brs.insert(0, str(first["burst"]))
+
     def clear_all(self):
         self.processes_data.clear()
-        for table in [self.tree_rr, self.tree_sjf, self.tree_comp]:
+        self.rr_avg_res = None
+        self.sjf_avg_res = None
+        for table in [self.tree_rr, self.tree_sjf, self.tree_comp, self.loaded_tree]:
             for item in table.get_children():
                 table.delete(item)
 
@@ -309,12 +377,42 @@ class SchedulerApp:
             formatted_row = [row[0]] + [f"{val:.2f}" if isinstance(val, float) else val for val in row[1:]]
             table.insert("", "end", values=formatted_row)
 
-    def start_sim(self):
+    def update_process_table(self):
+        for i in self.loaded_tree.get_children():
+            self.loaded_tree.delete(i)
+        for p in self.processes_data:
+            self.loaded_tree.insert("", "end", values=(p["pid"], p["arrival"], p["burst"]))
+
+    def validate_processes(self):
         if not self.processes_data:
-            return messagebox.showwarning("Wait", "Add processes first!")
+            return "Add processes first!"
+
+        seen = set()
+        for p in self.processes_data:
+            pid = str(p.get("pid", "")).strip()
+            if not pid:
+                return "Process ID cannot be empty."
+            if pid in seen:
+                return f"Duplicate Process ID found: {pid}."
+            seen.add(pid)
+
+            arrival = p.get("arrival")
+            burst = p.get("burst")
+            if not isinstance(arrival, int) or arrival < 0:
+                return "Arrival time must be a non-negative integer."
+            if not isinstance(burst, int) or burst <= 0:
+                return "Burst time must be a positive integer."
+        return None
+
+    def start_sim(self):
+        validation_error = self.validate_processes()
+        if validation_error:
+            return messagebox.showerror("Invalid Input", validation_error)
+
         try:
             q = int(self.entry_qnt.get())
-            if q <= 0: return messagebox.showerror("Error", "Quantum must be > 0.")
+            if q <= 0:
+                return messagebox.showerror("Error", "Quantum must be > 0.")
         except ValueError:
             return messagebox.showerror("Error", "Enter a valid Quantum integer.")
 
@@ -341,8 +439,6 @@ class SchedulerApp:
 
         draw_gantt(gantt_rr, f"Round Robin Scheduling (Quantum = {q})")
         draw_gantt(gantt_sjf, "SJF (Preemptive) Scheduling")
-        
-        # استدعاء جراف المقارنة هنا 🔥
         draw_comparison_chart(self.rr_avg_res, self.sjf_avg_res)
 
     def export_data(self):
@@ -351,7 +447,6 @@ class SchedulerApp:
         export_pdf(self.rr_avg_res, self.sjf_avg_res, self.processes_data)
         messagebox.showinfo("Exported", "Report saved successfully as 'Scheduling_Comparison_Report.pdf'.")
 
-# ================= RUN PROGRAM =================
 if __name__ == "__main__":
     root = tk.Tk()
     app = SchedulerApp(root)

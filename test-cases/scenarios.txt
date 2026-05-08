@@ -1,0 +1,48 @@
+Test Cases - CPU Scheduling Simulator
+
+
+Scenario 1: Normal Case (Standard Workload)
+
+Processes:
+P1: Arrival 0 | Burst 7  
+P2: Arrival 1 | Burst 3  
+P3: Arrival 2 | Burst 8  
+P4: Arrival 5 | Burst 2  
+
+Quantum (RR): 2
+
+Observed Results:
+- SJF (Preemptive): Avg Waiting Time ≈ 3.50 (prioritizes shorter jobs)
+- Round Robin: Avg Waiting Time ≈ 7.25 (fair time-sharing)
+
+Verification:
+Results match Gantt charts and calculated metrics.
+
+
+Case 2: Fairness vs Starvation
+
+Processes:
+P1: Arrival 0 | Burst 20  
+P2: Arrival 1 | Burst 2  
+P3: Arrival 2 | Burst 2  
+
+Quantum (RR): 4
+
+Expected Behavior:
+- SJF: Short processes (P2, P3) complete first, long job (P1) is delayed.
+- RR: CPU time is shared fairly, improving response time for all processes.
+
+Conclusion:
+SJF improves throughput, while RR ensures fairness.
+
+
+Case 3: Input Validation
+
+Test Actions:
+- Negative burst time (-5)
+- Empty Process ID
+- Quantum = 0
+
+Expected Behavior:
+- Error message is displayed (invalid input / quantum must be > 0)
+- System rejects input and does not crash
