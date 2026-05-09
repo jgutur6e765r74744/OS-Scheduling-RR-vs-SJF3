@@ -1,5 +1,5 @@
 def calculate_metrics(processes):
-    """حساب مقاييس الأداء لكل عملية (WT, TAT, RT)"""
+
     results = []
     for p in processes:
         tat = p.completion - p.arrival
@@ -10,19 +10,17 @@ def calculate_metrics(processes):
 
 
 def get_average(metrics):
-    """حساب متوسطات المقاييس"""
     if not metrics:
         return (0, 0, 0)
     n = len(metrics)
     return (
-        sum(x[1] for x in metrics) / n,  # Avg Waiting Time
-        sum(x[2] for x in metrics) / n,  # Avg Turnaround Time
-        sum(x[3] for x in metrics) / n,  # Avg Response Time
-    )
+        sum(x[1] for x in metrics) / n,   
+        sum(x[2] for x in metrics) / n,   
+        sum(x[3] for x in metrics) / n,     
+   )
 
 
 def create_metrics_matrix(metrics):
-    """إنشاء ماتريكس من المقاييس"""
     if not metrics:
         return []
     
@@ -34,7 +32,6 @@ def create_metrics_matrix(metrics):
 
 
 def create_comparison_matrix(rr_metrics, sjf_metrics):
-    """إنشاء ماتريكس مقارنة بين الخوارزميات"""
     rr_avg = get_average(rr_metrics)
     sjf_avg = get_average(sjf_metrics)
     

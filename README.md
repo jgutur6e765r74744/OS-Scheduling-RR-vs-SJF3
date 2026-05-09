@@ -14,7 +14,12 @@ Functional Requirements: • Add processes via GUI • Load test scenarios • V
 
 
 
-team members:
+team members: 
+
+
+
+
+
 
 4: Build Steps 1. Install Python 3.x on your system 2. Install required libraries using: pip install matplotlib fpdf 3. Download or clone the project files 4. Open the project in any Python IDE (VS Code / PyCharm / etc.)
 
