@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 from scheduling import (
-    build_processes, calculate_metrics, get_average,
-    run_round_robin, run_sjf, merge_gantt, SCENARIOS
+    build_processes, run_round_robin, run_sjf, merge_gantt
 )
+from matrices import calculate_metrics, get_average
+from models import SCENARIOS
 
 
 class SchedulerApp:
